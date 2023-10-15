@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useCallback } from 'react';
-import { Text, View } from 'react-native';
+import { SafeAreaView, Text, View } from 'react-native';
 import AlarmPage from './pages/AlarmPage';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
