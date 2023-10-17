@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { SafeAreaView, Button, Text, StyleSheet, Pressable, View } from 'react-native';
 
 export const AddAlarm = (props) => {
-    const [date, setDate] = useState(new Date(Date.now()));
+    let curDate = new Date(Date.now());
+    curDate.setMilliseconds(0);
+    curDate.setSeconds(0);
+    const [date, setDate] = useState(curDate);
 
 
     const onChange = (event, selectedDate) => {
