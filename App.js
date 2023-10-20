@@ -1,10 +1,10 @@
-import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect } from 'react';
-import { SafeAreaView, Text, View } from 'react-native';
+import { View } from 'react-native';
 import AlarmPage from './pages/AlarmPage.js';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import notifee, { EventType } from '@notifee/react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 // SplashScreen.preventAutoHideAsync();
 
 export default function App() {
@@ -48,9 +48,9 @@ export default function App() {
 
 
   return (
-    <View>
+    <GestureHandlerRootView>
       <AlarmPage />
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
