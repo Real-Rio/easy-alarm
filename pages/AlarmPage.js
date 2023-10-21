@@ -9,9 +9,9 @@ import * as React from 'react';
 import { FAB, Portal, PaperProvider } from 'react-native-paper';
 import uuid from 'react-native-uuid';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { storeData, getData } from "../helper/data_persistent";
 
 const AlarmPage = function () {
-    const [sound, setSound] = React.useState();
     const [modalVisible, setModalVisible] = useState(false);
     const [addBtnVisible, setAddBtnVisible] = useState(true);
     const [scheduledAlarms, setScheduledAlarms] = useState([]);
@@ -22,13 +22,20 @@ const AlarmPage = function () {
     // notifee.cancelAllNotifications()
 
     React.useEffect(() => {
-        return sound
-            ? () => {
-                console.log('Unloading Sound');
-                sound.unloadAsync();
+        getData('scheduledAlarms').then((data) => {
+            if (data !== null) {
+                console.log(data[0]);
+                setScheduledAlarms(data)
             }
-            : undefined;
-    }, [sound]);
+        })
+        getData('fastAlarms').then((data) => {
+            if (data !== null) {
+                setFastAlarms(data)
+                // console.log(data[0]);
+            }
+        })
+    }, [])
+
 
     const onStateChange = ({ open }) => setState({ open });
 
@@ -39,13 +46,33 @@ const AlarmPage = function () {
         setAddBtnVisible(true)
     }
 
-    const updateScheduledAlarms = (uuid, newDate) => {
-        setScheduledAlarms(scheduledAlarms.map(alarm => {
-            if (alarm.uuid === uuid) {
-                alarm.fireDate = newDate
-            }
-            return alarm
-        }).sort((a, b) => a.fireDate - b.fireDate))
+    const updateScheduledAlarms = (uuid, newNotificationID, mode, ifCanceled) => {
+        let newAlarms = []
+        if (ifCanceled) {
+            newAlarms = scheduledAlarms.map(alarm => {
+                if (alarm.uuid === uuid) {
+                    alarm.ifCanceled = true
+                }
+                return alarm
+            })
+        }
+        else if (mode === 'next') {
+            newAlarms = scheduledAlarms.map(alarm => {
+                if (alarm.uuid === uuid) {
+                    alarm.nxtNotificationID = newNotificationID
+                    alarm.mode = mode
+                    alarm.ifCanceled = ifCanceled
+                }
+                return alarm
+            }).sort((a, b) => a.fireDate - b.fireDate)
+        }
+        else {
+            // TODO: week mode
+            console.log('updateScheduledAlarms mode is ' + mode)
+        }
+
+        setScheduledAlarms(newAlarms)
+        storeData('scheduledAlarms', newAlarms)
     }
 
 
@@ -63,7 +90,7 @@ const AlarmPage = function () {
 
         const trigger = {
             type: TriggerType.TIMESTAMP,
-            timestamp: newDate.getTime(), // fire at 11:10am (10 minutes before meeting)
+            timestamp: newDate.getTime(),
         };
 
         // Create a trigger notification
@@ -78,11 +105,13 @@ const AlarmPage = function () {
             },
             trigger,
         );
-        setScheduledAlarms([...scheduledAlarms, { fireDate: date, uuid: uuid.v4(), notificationIDs: [createdID] }].sort((a, b) => a.fireDate - b.fireDate))
+        const newAlarms = [...scheduledAlarms, { fireDate: newDate.getTime(), mode: 'next', ifCanceled: false, uuid: uuid.v4(), nxtNotificationID: createdID }].sort((a, b) => a.fireDate - b.fireDate)
+        setScheduledAlarms(newAlarms)
+        storeData('scheduledAlarms', newAlarms)
     }
 
     const addFast = async (addminutes) => {
-        if(addminutes===0) return
+        if (addminutes === 0) return
         setModalVisible(!modalVisible)
         setAddBtnVisible(true)
         const firedate = new Date(Date.now() + addminutes * 60 * 1000)
@@ -101,24 +130,32 @@ const AlarmPage = function () {
                 timestamp: firedate.getTime()
             },
         );
-        setFastAlarms([...fastAlarms, { uuid: uuid.v4(), fireDate: firedate,notificationID:createdID }].sort((a, b) => a.fireDate - b.fireDate))
 
+        const newAlarms = [...fastAlarms, { uuid: uuid.v4(), fireDate: firedate.getTime(), notificationID: createdID }].sort((a, b) => a.fireDate - b.fireDate)
+        setFastAlarms(newAlarms)
+        storeData('fastAlarms', newAlarms)
     }
 
-    const deleteScheduled = (uuid) => {
-        scheduledAlarms.find(alarm => alarm.uuid === uuid).notificationIDs.forEach(id => notifee.cancelNotification(id))
-        setScheduledAlarms(scheduledAlarms.filter(alarm => alarm.uuid !== uuid))
-
+    const deleteScheduled = (uuid, mode) => {
+        if (mode === 'next') {
+            notifee.cancelNotification(scheduledAlarms.find(alarm => alarm.uuid === uuid).nxtNotificationID)
+            const newAlarms = scheduledAlarms.filter(alarm => alarm.uuid !== uuid)
+            setScheduledAlarms(newAlarms)
+            storeData('scheduledAlarms', newAlarms)
+        }
     }
     // 用户左滑删除
     const deleteFast = (uuid) => {
         notifee.cancelNotification(fastAlarms.find(alarm => alarm.uuid === uuid).notificationID)
-        setFastAlarms(fastAlarms.filter(alarm => alarm.uuid !== uuid))
-        console.log('delete fast')
+        const newAlarms = fastAlarms.filter(alarm => alarm.uuid !== uuid)
+        setFastAlarms(newAlarms)
+        storeData('fastAlarms', newAlarms)
     }
     // 到点后自动撤销fast
     const removeFast = (uuid) => {
-        setFastAlarms(fastAlarms.filter(alarm => alarm.uuid !== uuid))
+        const newAlarms = fastAlarms.filter(alarm => alarm.uuid !== uuid)
+        setFastAlarms(newAlarms)
+        storeData('fastAlarms', newAlarms)
     }
 
     const renderRightActions = () => {
@@ -157,8 +194,8 @@ const AlarmPage = function () {
             )}
             <Text className=" h-12 mt-4 text-black text-4xl font-Jet-Bold">Scheduled Clock</Text>
             {scheduledAlarms.map((alarm) =>
-                <Swipeable renderRightActions={renderRightActions} onSwipeableOpen={() => deleteScheduled(alarm.uuid)} key={alarm.uuid}>
-                    <ScheduledClock key={alarm.uuid} date={alarm.fireDate} notificationID={alarm.notificationId} uuid={alarm.uuid} />
+                <Swipeable renderRightActions={renderRightActions} onSwipeableOpen={() => deleteScheduled(alarm.uuid, alarm.mode)} key={alarm.uuid}>
+                    <ScheduledClock key={alarm.uuid} date={alarm.fireDate} nxtNotificationID={alarm.nxtNotificationID} uuid={alarm.uuid} mode={alarm.mode} updateScheduledAlarms={updateScheduledAlarms} ifCanceled={alarm.ifCanceled} />
                 </Swipeable>
             )}
         </ScrollView>
