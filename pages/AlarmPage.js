@@ -10,6 +10,8 @@ import { FAB, Portal, PaperProvider } from 'react-native-paper';
 import uuid from 'react-native-uuid';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { storeData, getData } from "../helper/data_persistent";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const AlarmPage = function () {
     const [modalVisible, setModalVisible] = useState(false);
@@ -20,18 +22,28 @@ const AlarmPage = function () {
     const [state, setState] = React.useState({ open: false });
 
     // notifee.cancelAllNotifications()
+    // AsyncStorage.removeItem('scheduledAlarms')
+    // AsyncStorage.removeItem('fastAlarms')
+
+    const initialWeek = {
+        Mon: { id: null, selected: false },
+        Tue: { id: null, selected: false },
+        Wed: { id: null, selected: false },
+        Thu: { id: null, selected: false },
+        Fri: { id: null, selected: false },
+        Sat: { id: null, selected: false },
+        Sun: { id: null, selected: false },
+    }
 
     React.useEffect(() => {
         getData('scheduledAlarms').then((data) => {
             if (data !== null) {
-                console.log(data[0]);
                 setScheduledAlarms(data)
             }
         })
         getData('fastAlarms').then((data) => {
             if (data !== null) {
                 setFastAlarms(data)
-                // console.log(data[0]);
             }
         })
     }, [])
@@ -46,30 +58,17 @@ const AlarmPage = function () {
         setAddBtnVisible(true)
     }
 
-    const updateScheduledAlarms = (uuid, newNotificationID, mode, ifCanceled) => {
-        let newAlarms = []
-        if (ifCanceled) {
-            newAlarms = scheduledAlarms.map(alarm => {
-                if (alarm.uuid === uuid) {
-                    alarm.ifCanceled = true
-                }
-                return alarm
-            })
-        }
-        else if (mode === 'next') {
-            newAlarms = scheduledAlarms.map(alarm => {
-                if (alarm.uuid === uuid) {
-                    alarm.nxtNotificationID = newNotificationID
-                    alarm.mode = mode
-                    alarm.ifCanceled = ifCanceled
-                }
-                return alarm
-            }).sort((a, b) => a.fireDate - b.fireDate)
-        }
-        else {
-            // TODO: week mode
-            console.log('updateScheduledAlarms mode is ' + mode)
-        }
+    const updateScheduledAlarms = (uuid, newNotificationID, mode, ifCanceled, week) => {
+        const newAlarms = scheduledAlarms.map(alarm => {
+            if (alarm.uuid === uuid) {
+                alarm.nxtNotificationID = newNotificationID
+                alarm.mode = mode
+                alarm.ifCanceled = ifCanceled
+                if (week !== null)
+                    alarm.week = Object.assign({}, alarm.week, week)
+            }
+            return alarm
+        })
 
         setScheduledAlarms(newAlarms)
         storeData('scheduledAlarms', newAlarms)
@@ -79,7 +78,7 @@ const AlarmPage = function () {
     const addScheduled = async (date) => {
         setModalVisible(!modalVisible)
         setAddBtnVisible(true)
-        if (scheduledAlarms.some(alarm => alarm.fireDate.getTime() === date.getTime())) return
+        if (scheduledAlarms.some(alarm => alarm.fireDate === date.getTime())) return
 
         await notifee.requestPermission();
 
@@ -105,7 +104,7 @@ const AlarmPage = function () {
             },
             trigger,
         );
-        const newAlarms = [...scheduledAlarms, { fireDate: newDate.getTime(), mode: 'next', ifCanceled: false, uuid: uuid.v4(), nxtNotificationID: createdID }].sort((a, b) => a.fireDate - b.fireDate)
+        const newAlarms = [...scheduledAlarms, { fireDate: newDate.getTime(), mode: 'next', ifCanceled: false, uuid: uuid.v4(), nxtNotificationID: createdID, week: initialWeek }].sort((a, b) => a.fireDate - b.fireDate)
         setScheduledAlarms(newAlarms)
         storeData('scheduledAlarms', newAlarms)
     }
@@ -136,9 +135,25 @@ const AlarmPage = function () {
         storeData('fastAlarms', newAlarms)
     }
 
+    // 用户左滑删除
     const deleteScheduled = (uuid, mode) => {
         if (mode === 'next') {
-            notifee.cancelNotification(scheduledAlarms.find(alarm => alarm.uuid === uuid).nxtNotificationID)
+            const toDeleteAlarm = scheduledAlarms.find(alarm => alarm.uuid === uuid)
+            if (!toDeleteAlarm.ifCanceled)
+                notifee.cancelNotification(toDeleteAlarm.nxtNotificationID)
+            const newAlarms = scheduledAlarms.filter(alarm => alarm.uuid !== uuid)
+            setScheduledAlarms(newAlarms)
+            storeData('scheduledAlarms', newAlarms)
+        }
+        else if (mode === 'week') {
+            const toDeleteAlarm = scheduledAlarms.find(alarm => alarm.uuid === uuid)
+            if (!toDeleteAlarm.ifCanceled) {
+                Object.keys(toDeleteAlarm.week).forEach((key) => {
+                    if (toDeleteAlarm.week[key].selected) {
+                        notifee.cancelNotification(toDeleteAlarm.week[key].id)
+                    }
+                })
+            }
             const newAlarms = scheduledAlarms.filter(alarm => alarm.uuid !== uuid)
             setScheduledAlarms(newAlarms)
             storeData('scheduledAlarms', newAlarms)
@@ -195,7 +210,7 @@ const AlarmPage = function () {
             <Text className=" h-12 mt-4 text-black text-4xl font-Jet-Bold">Scheduled Clock</Text>
             {scheduledAlarms.map((alarm) =>
                 <Swipeable renderRightActions={renderRightActions} onSwipeableOpen={() => deleteScheduled(alarm.uuid, alarm.mode)} key={alarm.uuid}>
-                    <ScheduledClock key={alarm.uuid} date={alarm.fireDate} nxtNotificationID={alarm.nxtNotificationID} uuid={alarm.uuid} mode={alarm.mode} updateScheduledAlarms={updateScheduledAlarms} ifCanceled={alarm.ifCanceled} />
+                    <ScheduledClock key={alarm.uuid} date={alarm.fireDate} nxtNotificationID={alarm.nxtNotificationID} uuid={alarm.uuid} mode={alarm.mode} updateScheduledAlarms={updateScheduledAlarms} ifCanceled={alarm.ifCanceled} week={alarm.week} />
                 </Swipeable>
             )}
         </ScrollView>
