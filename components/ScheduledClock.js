@@ -1,23 +1,71 @@
 import { Text, View, Switch } from "react-native";
 import WeekDisplays from "./WeekDisplays";
 import { useEffect, useState } from "react";
-import notifee, { TriggerType } from '@notifee/react-native';
+import notifee, {  TriggerType,RepeatFrequency } from '@notifee/react-native';
+import { idText } from "typescript";
 
 const ScheduledClock = function ({ date, nxtNotificationID, uuid, mode, updateScheduledAlarms, ifCanceled }) {
     const [isEnabled, setIsEnabled] = useState(!ifCanceled);
-    // const [curNotificationID, setCurNotificationID] = useState(nxtNotificationID);
+    const [weekActivated, setWeekActivated] = useState([false, false, false, false, false, false, false]);
+    const [curChangeWeekDay, setCurChangeWeekDay] = useState(-1);
+    const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-    // useEffect(() => {
-    //     setCurNotificationID(notificationIDs)
-    // }, [])
+    useEffect(() => {
+        // console.log(curChangeWeekDay)
+        async function createTrigger(trigger) {
+            return await notifee.createTriggerNotification(
+                {
+                    title: '闹钟来了',
+                    body: '快起床',
+                    ios: {
+                        sound: 'default_sound.wav'
+                    }
+
+                },
+                trigger
+            )
+        }
+
+        async function cancelTrigger(ID) {
+            return await notifee.cancelNotification(ID)
+        }
+            
+
+        if (mode === 'next' && weekActivated[curChangeWeekDay]) {
+            const newDate = new Date(date);
+            const daysUntilNextWeek = (curChangeWeekDay - newDate.getDay() + 8) % 7
+            newDate.setDate(newDate.getDate() + daysUntilNextWeek)
+            console.log(daysUntilNextWeek);
+
+            // 取消原来的闹钟
+            cancelTrigger(nxtNotificationID)
+
+            const trigger = {
+                type: TriggerType.TIMESTAMP,
+                timestamp: newDate.getTime(),
+                repeatFrequency: RepeatFrequency.WEEKLY
+            }
+
+            createTrigger(trigger).then((ID) => {
+                updateScheduledAlarms(uuid, null, 'week', false,{[weekdays[curChangeWeekDay]]:ID})
+            })
 
 
+        }
+
+
+    }, [weekActivated])
 
     const updateNoticationID = async (mode) => {
         if (mode === 'next') {
             let newDate = date;
-            if (date < Date.now())
-                newDate = new Date(date + 24 * 60 * 60 * 1000)
+            // TODO：不一定只加24小时
+            if (date < Date.now()) {
+                const gapDays = parseInt((Date.now() - date) / (24 * 60 * 60 * 1000))
+                newDate = new Date(date + gapDays*24 * 60 * 60 * 1000).getTime()
+            }
+            if (date < Date.now()) 
+                newDate = new Date(newDate + 24 * 60 * 60 * 1000).getTime()
 
             const trigger = {
                 type: TriggerType.TIMESTAMP,
@@ -87,9 +135,9 @@ const ScheduledClock = function ({ date, nxtNotificationID, uuid, mode, updateSc
                 value={isEnabled}
                 className="absolute right-4 top-12"
             />
-            <WeekDisplays />
+            <WeekDisplays activated={weekActivated} setActivated={setWeekActivated} setCurChangeWeekDay={setCurChangeWeekDay} />
         </View>
     )
 }
 
-export default ScheduledClock;
+export default ScheduledClock

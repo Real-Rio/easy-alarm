@@ -24,14 +24,12 @@ const AlarmPage = function () {
     React.useEffect(() => {
         getData('scheduledAlarms').then((data) => {
             if (data !== null) {
-                console.log(data[0]);
                 setScheduledAlarms(data)
             }
         })
         getData('fastAlarms').then((data) => {
             if (data !== null) {
                 setFastAlarms(data)
-                // console.log(data[0]);
             }
         })
     }, [])
@@ -46,7 +44,7 @@ const AlarmPage = function () {
         setAddBtnVisible(true)
     }
 
-    const updateScheduledAlarms = (uuid, newNotificationID, mode, ifCanceled) => {
+    const updateScheduledAlarms = (uuid, newNotificationID, mode, ifCanceled,week) => {
         let newAlarms = []
         if (ifCanceled) {
             newAlarms = scheduledAlarms.map(alarm => {
@@ -56,20 +54,22 @@ const AlarmPage = function () {
                 return alarm
             })
         }
-        else if (mode === 'next') {
+        else  {
             newAlarms = scheduledAlarms.map(alarm => {
                 if (alarm.uuid === uuid) {
                     alarm.nxtNotificationID = newNotificationID
                     alarm.mode = mode
                     alarm.ifCanceled = ifCanceled
+                    alarm.week = Object.assign({}, alarm.week, week)
+                    alarm.mode = mode
                 }
                 return alarm
             }).sort((a, b) => a.fireDate - b.fireDate)
         }
-        else {
-            // TODO: week mode
-            console.log('updateScheduledAlarms mode is ' + mode)
-        }
+        // else { // 切换为week mode
+        //     // TODO: week mode
+        //     console.log('updateScheduledAlarms mode is ' + mode)
+        // }
 
         setScheduledAlarms(newAlarms)
         storeData('scheduledAlarms', newAlarms)
@@ -79,7 +79,7 @@ const AlarmPage = function () {
     const addScheduled = async (date) => {
         setModalVisible(!modalVisible)
         setAddBtnVisible(true)
-        if (scheduledAlarms.some(alarm => alarm.fireDate.getTime() === date.getTime())) return
+        if (scheduledAlarms.some(alarm => alarm.fireDate === date.getTime())) return
 
         await notifee.requestPermission();
 
@@ -105,7 +105,7 @@ const AlarmPage = function () {
             },
             trigger,
         );
-        const newAlarms = [...scheduledAlarms, { fireDate: newDate.getTime(), mode: 'next', ifCanceled: false, uuid: uuid.v4(), nxtNotificationID: createdID }].sort((a, b) => a.fireDate - b.fireDate)
+        const newAlarms = [...scheduledAlarms, { fireDate: newDate.getTime(), mode: 'next', ifCanceled: false, uuid: uuid.v4(), nxtNotificationID: createdID,week:{} }].sort((a, b) => a.fireDate - b.fireDate)
         setScheduledAlarms(newAlarms)
         storeData('scheduledAlarms', newAlarms)
     }

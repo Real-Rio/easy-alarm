@@ -13,7 +13,7 @@ const FastClock = function ({ date,deleteFast,uuid }) {
             }
             else
                 setLeftminute(parseInt((date - Date.now()) / (60 * 1000) + 1))
-        }, 10000);
+        }, 1000);
     }, []);
 
     useEffect(() => {
@@ -25,7 +25,7 @@ const FastClock = function ({ date,deleteFast,uuid }) {
 
     return (
         <View className=" w-full h-32 relative border-b-2 border-black bg-gray-2">
-            <Text className=" left-6 top-6 h-16 absolute pt-1 text-black text-6xl font-Jet-Regular">{`${new Date(date).getHours()}:${formatMinute}`}</Text>
+            <Text className=" left-6 top-10 h-16 absolute pt-1 text-black text-6xl font-Jet-Regular">{`${new Date(date).getHours()}:${formatMinute}`}</Text>
             <View className="right-4 bottom-3 absolute ">
                 <Text className="text-black text-xl font-Jet-Regular">{`${leftminute} min`}</Text>
                 <Text className="text-black text-xl font-Jet-Regular">left</Text>
