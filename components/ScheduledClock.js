@@ -217,4 +217,4 @@ const ScheduledClock = function ({ date, nxtNotificationID, uuid, mode, updateSc
     )
 }
 
-export default ScheduledClock;
+export default ScheduledClock
