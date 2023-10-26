@@ -161,8 +161,14 @@ const AlarmPage = function () {
     }
     // 用户左滑删除
     const deleteFast = (uuid) => {
-        notifee.cancelNotification(fastAlarms.find(alarm => alarm.uuid === uuid).notificationID)
-        const newAlarms = fastAlarms.filter(alarm => alarm.uuid !== uuid)
+        const newAlarms = fastAlarms.filter(alarm => {
+            if (alarm.uuid === uuid) {
+                notifee.cancelNotification(alarm.notificationID)
+                return false
+            }
+            else
+                return true
+        })
         setFastAlarms(newAlarms)
         storeData('fastAlarms', newAlarms)
     }

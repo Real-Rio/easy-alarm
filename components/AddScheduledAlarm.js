@@ -1,6 +1,6 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { SafeAreaView, Button, Text, StyleSheet, Pressable, View } from 'react-native';
+import { SafeAreaView, TouchableOpacity, Text, StyleSheet, Pressable, View } from 'react-native';
 
 export const AddScheduledAlarm = (props) => {
     let curDate = new Date(Date.now());
@@ -16,32 +16,26 @@ export const AddScheduledAlarm = (props) => {
 
     return (
         // <SafeAreaView>
-        <SafeAreaView style={styles.centeredView}>
-            {/* <Pressable onPress={props.hideModal}> */}
-            <View style={styles.modalView}>
-                {/* <Text>selected: {date.toLocaleString()}</Text> */}
-                <DateTimePicker
-                    testID="dateTimePicker"
-                    value={date}
-                    mode='time'
-                    is24Hour={true}
-                    onChange={onChange}
-                />
-                <Pressable
-                    style={[styles.button, styles.buttonClose]}
-                    onPress={() => props.addScheduled(date)}
-                >
-                    <Text style={styles.textStyle}>Add</Text>
-                </Pressable>
-                <Pressable
-                    style={[styles.button, styles.buttonClose]}
-                    onPress={props.hideModal}>
-                    <Text style={styles.textStyle}>Hide Modal</Text>
-                </Pressable>
-            </View>
-            {/* </Pressable> */}
-        </SafeAreaView>
-        // </SafeAreaView>
+        <TouchableOpacity activeOpacity={1} style={styles.centeredView} onPress={props.hideModal}>
+            <Pressable>
+                <View style={styles.modalView}>
+                    <DateTimePicker
+                        testID="dateTimePicker"
+                        value={date}
+                        mode='time'
+                        is24Hour={true}
+                        onChange={onChange}
+                    />
+                    <Pressable
+                        style={[styles.button, styles.buttonClose]}
+                        className="mt-5"
+                        onPress={() => props.addScheduled(date)}
+                    >
+                        <Text style={styles.textStyle}>Add</Text>
+                    </Pressable>
+                </View>
+            </Pressable>
+        </TouchableOpacity>
     );
 };
 
@@ -51,7 +45,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 22,
-        // backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'transparent',
     },
     modalView: {
         margin: 20,

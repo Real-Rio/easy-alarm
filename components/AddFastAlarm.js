@@ -1,48 +1,45 @@
 import { useState } from 'react';
-import { SafeAreaView, Button, Text, StyleSheet, Pressable, View } from 'react-native';
-import { Chip, IconButton } from 'react-native-paper';
-
+import { TouchableOpacity, Text, StyleSheet, Pressable, View } from 'react-native';
+import { Chip } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 
 export const AddFastAlarm = (props) => {
     const [addMinutes, setAddMinutes] = useState(0);
 
     return (
         // <SafeAreaView>
-        <SafeAreaView style={styles.centeredView}>
-            <View style={styles.modalView}>
-                {addMinutes < 60 ? <Text className="font-Jet-Bold text-xl">{`+${addMinutes}min`}</Text> : <Text className="font-Jet-Bold text-xl">{`+${parseInt(addMinutes / 60)}hr,${addMinutes % 60}min`}</Text>}
-                <View className="flex-row flex-wrap justify-between">
-                    <Chip style={styles.chipStyle} icon="information" onPress={() => setAddMinutes(addMinutes + 1)}>1 min</Chip>
-                    <Chip style={styles.chipStyle} icon="information" onPress={() => setAddMinutes(addMinutes + 5)}>5 mins</Chip>
-                    <Chip style={styles.chipStyle} icon="information" onPress={() => setAddMinutes(addMinutes + 10)}>10 mins</Chip>
-                    <Chip style={styles.chipStyle} icon="information" onPress={() => setAddMinutes(addMinutes + 15)}>15 mins</Chip>
-                    <Chip style={styles.chipStyle} icon="information" onPress={() => setAddMinutes(addMinutes + 30)}>30 mins</Chip>
-                    <Chip style={styles.chipStyle} icon="information" onPress={() => setAddMinutes(addMinutes + 60)}>60 mins</Chip>
+        <TouchableOpacity activeOpacity={1} style={styles.centeredView} onPress={props.hideModal}>
+            <Pressable>
+                <View style={styles.modalView}>
+                    {addMinutes < 60 ? <Text className="font-Jet-Bold text-xl">{`+${addMinutes}min`}</Text> : <Text className="font-Jet-Bold text-xl">{`+${parseInt(addMinutes / 60)}hr,${addMinutes % 60}min`}</Text>}
+                    <View className="flex-row flex-wrap justify-between">
+                        <Chip style={styles.chipStyle} icon={() => <Icon name='information' size={20} color='#363636' />} onPress={() => setAddMinutes(addMinutes + 1)}>1 min</Chip>
+                        <Chip style={styles.chipStyle} icon={() => <Icon name='information' size={20} color='#363636' />} onPress={() => setAddMinutes(addMinutes + 5)}>5 mins</Chip>
+                        <Chip style={styles.chipStyle} icon={() => <Icon name='information' size={20} color='#363636' />} onPress={() => setAddMinutes(addMinutes + 10)}>10 mins</Chip>
+                        <Chip style={styles.chipStyle} icon={() => <Icon name='information' size={20} color='#363636' />} onPress={() => setAddMinutes(addMinutes + 15)}>15 mins</Chip>
+                        <Chip style={styles.chipStyle} icon={() => <Icon name='information' size={20} color='#363636' />} onPress={() => setAddMinutes(addMinutes + 30)}>30 mins</Chip>
+                        <Chip style={styles.chipStyle} icon={() => <Icon name='information' size={20} color='#363636' />} onPress={() => setAddMinutes(addMinutes + 60)}>60 mins</Chip>
+
+                    </View>
+                    <View className="flex-row mt-5">
+                        <Pressable
+                            style={[styles.button, styles.buttonClose]}
+                            onPress={() => setAddMinutes(0)}
+                        >
+                            <Text style={styles.textStyle}>Reset</Text>
+                        </Pressable>
+                        <Pressable
+                            style={[styles.button, styles.buttonClose]}
+                            onPress={() => props.addFast(addMinutes)}
+                        >
+                            <Text style={styles.textStyle}>Add</Text>
+                        </Pressable>
+
+                    </View>
 
                 </View>
-                <View className="flex-row mt-5">
-                    <Pressable
-                        style={[styles.button, styles.buttonClose]}
-                        onPress={() => setAddMinutes(0)}
-                    >
-                        <Text style={styles.textStyle}>Reset</Text>
-                    </Pressable>
-                    <Pressable
-                        style={[styles.button, styles.buttonClose]}
-                        onPress={() => props.addFast(addMinutes)}
-                    >
-                        <Text style={styles.textStyle}>Add</Text>
-                    </Pressable>
-
-                </View>
-                <Pressable
-                    style={[styles.button, styles.buttonClose]}
-                    onPress={props.hideModal}>
-                    <Text style={styles.textStyle}>Hide Modal</Text>
-                </Pressable>
-            </View>
-            {/* </Pressable> */}
-        </SafeAreaView>
+            </Pressable>
+        </TouchableOpacity>
         // </SafeAreaView>
     );
 };
@@ -96,5 +93,6 @@ const styles = StyleSheet.create({
     chipStyle: {
         margin: 2,
         width: '47%',
+        backgroundColor: '#D5D5D5',
     }
 });
